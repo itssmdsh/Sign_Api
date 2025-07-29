@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import numpy as np
 import tensorflow as tf
 import pickle
+import json  # Added for JSON parsing
 
 # Load model and preprocessors once at startup
 model = tf.keras.models.load_model('final_sign_model_no_hello.keras')
@@ -15,7 +16,12 @@ app = Flask(__name__)
 @app.route("/predict", methods=["POST"])
 def predict():
     # Expects JSON: { "landmarks": [126 floats] }
-    data = request.json
+    data = request.get_json()
+
+    # 👇 Add this to handle the string-to-list conversion
+    if isinstance(data["landmarks"], str):
+        data["landmarks"] = json.loads(data["landmarks"])
+
     landmarks = np.array(data["landmarks"], dtype=np.float32).reshape(1, -1)
     X_scaled = scaler.transform(landmarks)
     probs = model.predict(X_scaled, verbose=0)[0]
